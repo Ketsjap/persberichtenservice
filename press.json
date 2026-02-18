@@ -1,5 +1,15 @@
 [
   {
+    "titel": "Telefacts",
+    "zender": "VTM",
+    "datum": "2026-02-17",
+    "tijd": "22:55",
+    "samenvatting": "In Telefacts brengen overlevenden en nabestaanden hun moedige getuigenis over de ramp in Crans-Montana, waar een feestelijke oudejaarsnacht veranderde in een tragedie. De impact op de levens van de slachtoffers en hun families wordt aangrijpend belicht.",
+    "seizoen_start": false,
+    "id": "vtm-telefacts-2026-02-17",
+    "scraped_at": "2026-02-18T10:52:25.479546"
+  },
+  {
     "titel": "2-Step Verification turned on",
     "zender": "Google",
     "datum": "2023-10-04",
