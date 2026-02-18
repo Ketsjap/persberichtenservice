@@ -1,0 +1,37 @@
+name: Update Press Feed
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Elk uur
+  workflow_dispatch: # Knop om handmatig te starten
+
+jobs:
+  update-feed:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install openai beautifulsoup4
+
+    - name: Run script
+      env:
+        GMAIL_USER: ${{ secrets.GMAIL_USER }}
+        GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: python process_emails.py
+
+    - name: Commit and push if changed
+      run: |
+        git config --global user.name 'TVBot'
+        git config --global user.email 'bot@tvtips.be'
+        git add press.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Update persberichten" && git push)
