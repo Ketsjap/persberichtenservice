@@ -1,0 +1,22 @@
+[
+  {
+    "titel": "Telefacts",
+    "zender": "VTM",
+    "datum": "2026-02-17",
+    "tijd": "22:55",
+    "samenvatting": "In Telefacts brengen overlevenden en nabestaanden hun moedige getuigenis over de ramp in Crans-Montana, waar een oudejaarsnacht veranderde in een tragedie.",
+    "seizoen_start": false,
+    "id": "vtm-telefacts-2026-02-17",
+    "scraped_at": "2026-02-18T11:30:58.492669"
+  },
+  {
+    "titel": "Dealen Met Coke",
+    "zender": "Play",
+    "datum": "2026-02-18",
+    "tijd": null,
+    "samenvatting": "In de zevende aflevering van Dealen Met Coke volgt Eric Goens patrouillerende agenten in Brussel-Noord, waar de Brusselse politie kiest voor een preventieve aanpak bij drugsverslaafden met mobiele douches en wasmachines.",
+    "seizoen_start": false,
+    "id": "play-dealenmetcoke-2026-02-18",
+    "scraped_at": "2026-02-18T11:30:56.230967"
+  }
+]
