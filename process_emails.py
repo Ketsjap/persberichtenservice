@@ -75,43 +75,43 @@ def analyze_with_ai(subject, sender, body, email_date, client):
     today = datetime.now().strftime("%Y-%m-%d")
     
     prompt = f"""
-    Je bent een TV-redacteur die persberichten verwerkt voor een database.
+    Je bent een data-processor. Je krijgt een ruwe e-mailtekst van een persbericht.
     
     CONTEXT:
-    - Vandaag is: {today}
-    - Datum van e-mail: {email_date}
+    - Vandaag: {today}
+    - Datum mail: {email_date}
     - Afzender: {sender}
     - Onderwerp: {subject}
     
     INHOUD EMAIL:
-    {body[:5000]}  # Meer tekst toestaan voor analyse
+    {body[:7000]} 
     
     JOUW TAAK:
-    Beoordeel of dit een PERSBERICHT is over een SPECIFIEK TV-PROGRAMMA (Vlaamse TV).
+    Zet deze ongestructureerde e-mail om naar strakke JSON.
     
-    ⚠️ NEGEER DEZE MAILS (Return {{ "ignore": true }}):
-    - Google Security Alerts, Twitter/LinkedIn notificaties, Spam.
+    ⚠️ NEGEER (Return {{ "ignore": true }}):
+    - Google Security Alerts, Twitter notificaties, Spam, Reclame.
     
-    ALS HET WEL RELEVANT IS, GEEF EEN UITGEBREID JSON OBJECT:
+    ALS RELEVANT, GEEF JSON MET DEZE VELDEN:
     {{
-      "titel": "Exacte programmatitel (zonder 'Seizoen X')",
-      "zender": "De zender (VTM, VRT 1, Play4, Canvas, etc.)",
-      "datum": "De uitzenddatum in YYYY-MM-DD formaat",
-      "tijd": "Uitzenduur (HH:MM) indien vermeld, anders null",
-      "samenvatting": "Een korte 'logline' van max 2 zinnen (voor in de lijstweergave).",
-      "lange_inhoud": "De volledige inhoudelijke beschrijving. Gebruik de tekst uit de mail, maar strip marketing-praat ('Kijk zeker!', 'Nu bij ons'). Focus op het verhaal/de inhoud. Mag 3-4 alinea's zijn.",
-      "quote": "Een opvallend citaat uit de tekst (indien aanwezig), inclusief naam van de spreker. Bijv: 'Het was een hel', zegt regisseur Jan.",
-      "seizoen_start": true/false
+      "titel": "Titel van het programma/nieuws",
+      "zender": "Zender (VTM, VRT, Play, etc.)",
+      "datum": "Uitzenddatum (YYYY-MM-DD)",
+      "tijd": "Uitzenduur (HH:MM) of null",
+      "seizoen_start": true/false,
+      "volledige_tekst": "De COMPLETE tekst van het persbericht. Instructies: 1. Kort NIETS in. 2. Behoud alle details, quotes en alinea's. 3. Verwijder WEL de 'ruis' eromheen (zoals: 'Bekijk de trailer hier', 'Niet voor publicatie', 'Persverantwoordelijke: Jan', 'Uitschrijven', 'Verzonden vanaf iPhone'). 4. Zorg dat het leest als een schoon artikel. Gebruik \\n voor nieuwe alinea's."
     }}
     
     GEEF ALLEEN JSON.
     """
     
     try:
+        # We gebruiken hier meer tokens voor de output omdat de tekst lang kan zijn
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.0
+            temperature=0.0,
+            max_tokens=2500 
         )
         content = response.choices[0].message.content
         content = content.replace("```json", "").replace("```", "").strip()
@@ -124,6 +124,7 @@ def analyze_with_ai(subject, sender, body, email_date, client):
     except Exception as e:
         print(f"AI Error: {e}")
         return None
+
 def is_relevant(subject, sender):
     # 1. Check Afzender Domein (Zeer betrouwbaar)
     sender_lower = sender.lower()
@@ -162,7 +163,6 @@ def main():
     # Laad bestaande JSON (om dubbels te voorkomen)
     existing_data = []
     # Als press.json corrupt is of vol junk zit, begin opnieuw
-    # (Je kan dit handmatig resetten door press.json te deleten op GitHub)
     if os.path.exists(JSON_FILE):
         try:
             with open(JSON_FILE, 'r', encoding='utf-8') as f:
