@@ -44,7 +44,7 @@ def analyze_with_ai(subject, body, client):
     
     Geef een JSON object terug met deze velden:
     - "titel": De exacte titel van het programma (zonder 'Seizoen X' of 'vanavond').
-    - "zender": De zender (VTM, VRT 1, Play4, Canvas, etc.).
+    - "zender": De zender (VTM, VRT 1, Play, Canvas, etc.).
     - "datum": De uitzenddatum in YYYY-MM-DD formaat (als het vandaag is, gebruik de datum van vandaag).
     - "tijd": Uitzenduur (HH:MM).
     - "samenvatting": Een wervende zin van max 30 woorden.
