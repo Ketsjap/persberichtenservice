@@ -94,13 +94,18 @@ def main():
     mail.login(EMAIL_USER, EMAIL_PASS)
     mail.select("inbox")
 
-    # 2. Zoek ongelezen mails
+   # 2. Zoek ongelezen mails
     status, messages = mail.search(None, 'UNSEEN')
     email_ids = messages[0].split()
 
     if not email_ids:
         print("Geen nieuwe emails.")
         return
+        
+    # 🔥 NIEUW: Pak alleen de laatste 5 mails om vastlopen te voorkomen
+    # De mails staan chronologisch, dus de laatste in de lijst zijn de nieuwste.
+    print(f"Totaal {len(email_ids)} ongelezen mails. We verwerken alleen de nieuwste 5.")
+    email_ids = email_ids[-5:]
 
     client = OpenAI(api_key=OPENAI_KEY)
     
