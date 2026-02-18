@@ -17,12 +17,28 @@ OPENAI_KEY = os.environ.get("OPENAI_API_KEY")
 # JSON BESTAND
 JSON_FILE = "press.json"
 
-# KEYWORDS OM OP TE FILTEREN (Case insensitive)
-# Alleen mails met deze woorden in het onderwerp worden verwerkt
-RELEVANT_KEYWORDS = ["vtm", "vrt", "play", "persbericht", "telefacts", "programma", "uitzending", "start", "seizoen", "aflevering", "nieuws", "tv"]
+# TOEGESTANE DOMEINEN (Whitelist)
+# Als een mail van een van deze domeinen komt, wordt hij ALTIJD geanalyseerd
+TRUSTED_DOMAINS = ["playmedia.be", "dpgmedia.be", "vrt.be", "sbsbelgium.be", "standaard.be"]
+
+# KEYWORDS (Fallback)
+# Als de afzender niet in de whitelist staat, kijken we of het onderwerp deze woorden bevat
+RELEVANT_KEYWORDS = ["persbericht", "telefacts", "programma", "uitzending", "start", "seizoen", "aflevering", "nieuws", "tv", "vtm", "play", "vrt"]
 
 def clean_text(text):
     return re.sub(r'\s+', ' ', text).strip()
+
+def decode_mime_header(header_value):
+    if not header_value:
+        return ""
+    decoded_list = decode_header(header_value)
+    result = ""
+    for content, encoding in decoded_list:
+        if isinstance(content, bytes):
+            result += content.decode(encoding if encoding else "utf-8", errors="ignore")
+        else:
+            result += str(content)
+    return result
 
 def extract_email_body(msg):
     body = ""
@@ -36,7 +52,7 @@ def extract_email_body(msg):
                     body = part.get_payload(decode=True).decode('utf-8')
                 except UnicodeDecodeError:
                     body = part.get_payload(decode=True).decode('latin-1', errors='ignore')
-                return body
+                return body # Geef direct plain text terug als gevonden
                 
             elif ctype == 'text/html' and 'attachment' not in cdispo:
                 try:
@@ -54,31 +70,43 @@ def extract_email_body(msg):
             
     return body
 
-def analyze_with_ai(subject, body, client):
-    # Huidige datum voor context (zodat AI weet wat "morgen" of "dinsdag 17 feb" betekent)
+def analyze_with_ai(subject, sender, body, email_date, client):
+    # Huidige datum voor context
     today = datetime.now().strftime("%Y-%m-%d")
     
     prompt = f"""
-    Je bent een assistent die TV-persberichten analyseert.
-    VANDAAG IS HET: {today}
+    Je bent een strikte TV-redacteur assistent.
     
-    ANALYSEER DEZE E-MAIL:
-    Onderwerp: {subject}
-    Inhoud: {body[:3500]}
+    CONTEXT:
+    - Vandaag is: {today}
+    - Datum van e-mail: {email_date}
+    - Afzender: {sender}
+    - Onderwerp: {subject}
     
-    TAAK:
-    1. Is dit een persbericht over een specifiek TV-programma of uitzending?
-    2. Zo NEE (bijv. Google Security Alert, Twitter notificatie, Spam, Reclame): Geef JSON {{ "ignore": true }}
-    3. Zo JA: Extraheer de volgende data in JSON:
+    INHOUD EMAIL:
+    {body[:4000]}
     
-    - "titel": De exacte titel van het programma.
-    - "zender": De zender (VTM, VRT 1, Play4, Canvas, etc.).
-    - "datum": De uitzenddatum in YYYY-MM-DD formaat. (Let op: "dinsdag 17 februari" moet je omzetten naar het juiste jaar, waarschijnlijk 2025 of 2026. Kijk naar de context of header datum).
-    - "tijd": Uitzenduur (HH:MM).
-    - "samenvatting": Een wervende samenvatting van max 2 zinnen.
-    - "seizoen_start": true als dit de start van een nieuw seizoen is.
+    JOUW TAAK:
+    Beoordeel of dit een PERSBERICHT is over een SPECIFIEK TV-PROGRAMMA (Vlaamse TV: VTM, Play, VRT, Canvas).
     
-    Geef ALLEEN JSON terug.
+    ⚠️ NEGEER DEZE MAILS (Return {{ "ignore": true }}):
+    - Google Security Alerts / 2-Step Verification
+    - Twitter / X notificaties ("Tweeted", "Shared")
+    - LinkedIn notificaties
+    - Nieuwsbrieven zonder specifieke programma-info
+    - Spam of reclame
+    
+    ALS HET WEL RELEVANT IS, GEEF JSON:
+    {{
+      "titel": "Exacte programmatitel (zonder 'Seizoen X')",
+      "zender": "De zender (VTM, VRT 1, Play4, Canvas, etc.)",
+      "datum": "De uitzenddatum in YYYY-MM-DD formaat (kijk goed naar de tekst: 'morgen', 'volgende week', 'woensdag 17 feb')",
+      "tijd": "Uitzenduur (HH:MM) indien vermeld, anders null",
+      "samenvatting": "Korte, wervende samenvatting (max 2 zinnen).",
+      "seizoen_start": true/false (is het de start van een nieuw seizoen?)
+    }}
+    
+    GEEF ALLEEN JSON.
     """
     
     try:
@@ -91,7 +119,6 @@ def analyze_with_ai(subject, body, client):
         content = content.replace("```json", "").replace("```", "").strip()
         data = json.loads(content)
         
-        # Filter junk eruit
         if data.get("ignore") == True:
             return None
             
@@ -100,7 +127,14 @@ def analyze_with_ai(subject, body, client):
         print(f"AI Error: {e}")
         return None
 
-def is_relevant(subject):
+def is_relevant(subject, sender):
+    # 1. Check Afzender Domein (Zeer betrouwbaar)
+    sender_lower = sender.lower()
+    for domain in TRUSTED_DOMAINS:
+        if domain in sender_lower:
+            return True
+            
+    # 2. Check Onderwerp Keywords (Fallback)
     if not subject: return False
     sub_lower = subject.lower()
     return any(keyword in sub_lower for keyword in RELEVANT_KEYWORDS)
@@ -114,7 +148,7 @@ def main():
     mail.login(EMAIL_USER, EMAIL_PASS)
     mail.select("inbox")
 
-    # Haal ALTIJD de lijst op, ook gelezen mails, want we kijken naar de laatste X
+    # Haal alles op, we filteren de laatste 20 in Python
     status, messages = mail.search(None, 'ALL')
     email_ids = messages[0].split()
 
@@ -122,71 +156,81 @@ def main():
         print("Inbox is leeg.")
         return
 
-    # Pak de laatste 20 mails (om zeker te zijn dat we de juiste vinden tussen de spam)
-    print(f"Totaal {len(email_ids)} mails. We scannen de laatste 20 op relevantie.")
+    # Pak de laatste 20 mails
+    print(f"Totaal {len(email_ids)} mails. We scannen de laatste 20.")
     recent_ids = email_ids[-20:]
 
     client = OpenAI(api_key=OPENAI_KEY)
     
-    # Laad bestaande JSON
+    # Laad bestaande JSON (om dubbels te voorkomen)
     existing_data = []
+    # Als press.json corrupt is of vol junk zit, begin opnieuw
+    # (Je kan dit handmatig resetten door press.json te deleten op GitHub)
     if os.path.exists(JSON_FILE):
-        with open(JSON_FILE, 'r', encoding='utf-8') as f:
-            try:
+        try:
+            with open(JSON_FILE, 'r', encoding='utf-8') as f:
                 existing_data = json.load(f)
-            except:
-                existing_data = []
+        except:
+            existing_data = []
 
     new_entries = []
 
-    # We draaien de lijst om: nieuwste eerst
+    # Loop omgekeerd (nieuwste eerst)
     for e_id in reversed(recent_ids):
         _, msg_data = mail.fetch(e_id, '(RFC822)')
         for response_part in msg_data:
             if isinstance(response_part, tuple):
                 msg = email.message_from_bytes(response_part[1])
-                subject, encoding = decode_header(msg["Subject"])[0]
-                if isinstance(subject, bytes):
-                    subject = subject.decode(encoding if encoding else "utf-8")
                 
-                # STRENGE FILTER: Alleen verwerken als het op een persbericht lijkt
-                if is_relevant(subject):
-                    print(f"🔍 ANALYSEREN: {subject}")
+                # Decode headers
+                subject = decode_mime_header(msg["Subject"])
+                sender = decode_mime_header(msg["From"])
+                date_str = decode_mime_header(msg["Date"])
+                
+                # Check relevantie (Subject OF Sender)
+                if is_relevant(subject, sender):
+                    print(f"🔍 ANALYSEREN: '{subject}' van '{sender}'")
+                    
                     body = extract_email_body(msg)
-                    data = analyze_with_ai(subject, body, client)
+                    data = analyze_with_ai(subject, sender, body, date_str, client)
                     
                     if data:
-                        # Maak ID
+                        # Maak unieke ID
                         clean_titel = re.sub(r'[^a-zA-Z0-9]', '', data['titel']).lower()
                         data['id'] = f"{data['zender'].lower()}-{clean_titel}-{data['datum']}"
                         data['scraped_at'] = datetime.now().isoformat()
                         
-                        print(f"   ✅ GEVONDEN: {data['titel']} op {data['datum']}")
+                        print(f"   ✅ GEVONDEN: {data['titel']} ({data['zender']})")
                         new_entries.append(data)
                     else:
-                        print("   ❌ AI wees dit af (geen TV programma).")
+                        print("   ❌ AI: Irrelevant (Spam/Notificatie).")
                 else:
-                    # Print alleen de eerste 50 chars om log schoon te houden
-                    print(f"⏭️  Overslaan (irrelevant): {subject[:50]}...")
+                    # Print kort voor debugging
+                    print(f"⏭️  Overslaan: {subject[:40]}... [{sender}]")
 
     mail.close()
     mail.logout()
 
     # Opslaan
     if new_entries:
-        # Voeg toe, voorkom dubbels
+        # Voeg toe, voorkom dubbels op basis van ID
         existing_ids = {item['id'] for item in existing_data}
+        added_count = 0
+        
         for entry in new_entries:
             if entry['id'] not in existing_ids:
-                existing_data.insert(0, entry)
+                existing_data.insert(0, entry) # Nieuwste bovenaan
+                existing_ids.add(entry['id'])
+                added_count += 1
         
+        # Houd max 50 items bij
         existing_data = existing_data[:50]
 
         with open(JSON_FILE, 'w', encoding='utf-8') as f:
             json.dump(existing_data, f, indent=2, ensure_ascii=False)
-        print(f"💾 press.json bijgewerkt met {len(new_entries)} nieuwe items.")
+        print(f"💾 press.json geüpdatet met {added_count} nieuwe items.")
     else:
-        print("Geen nieuwe relevante persberichten gevonden.")
+        print("Geen nieuwe relevante data.")
 
 if __name__ == "__main__":
     main()
