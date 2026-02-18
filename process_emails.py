@@ -21,20 +21,37 @@ def clean_text(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 def extract_email_body(msg):
+    body = ""
     if msg.is_multipart():
         for part in msg.walk():
             ctype = part.get_content_type()
             cdispo = str(part.get('Content-Disposition'))
+            
             if ctype == 'text/plain' and 'attachment' not in cdispo:
-                return part.get_payload(decode=True).decode()
+                try:
+                    body = part.get_payload(decode=True).decode('utf-8')
+                except UnicodeDecodeError:
+                    # Fallback naar latin-1 als utf-8 faalt
+                    body = part.get_payload(decode=True).decode('latin-1', errors='ignore')
+                return body
+                
             elif ctype == 'text/html' and 'attachment' not in cdispo:
-                html = part.get_payload(decode=True).decode()
+                try:
+                    html = part.get_payload(decode=True).decode('utf-8')
+                except UnicodeDecodeError:
+                    html = part.get_payload(decode=True).decode('latin-1', errors='ignore')
+                
                 soup = BeautifulSoup(html, "html.parser")
                 return soup.get_text()
     else:
-        return msg.get_payload(decode=True).decode()
-    return ""
-
+        # Geen multipart, gewoon platte tekst
+        try:
+            body = msg.get_payload(decode=True).decode('utf-8')
+        except UnicodeDecodeError:
+            body = msg.get_payload(decode=True).decode('latin-1', errors='ignore')
+            
+    return body
+    
 def analyze_with_ai(subject, body, client):
     prompt = f"""
     Analyseer deze e-mail (een persbericht over een TV-programma).
