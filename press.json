@@ -1,0 +1,52 @@
+[
+  {
+    "titel": "2-Step Verification turned on",
+    "zender": "Google",
+    "datum": "2023-10-04",
+    "tijd": "00:00",
+    "samenvatting": "Beveilig je Google-account met 2-staps verificatie voor extra bescherming.",
+    "seizoen_start": false,
+    "id": "google-2-step-verification-turned-on-2023-10-04",
+    "scraped_at": "2026-02-18T10:48:03.708538"
+  },
+  {
+    "titel": "Follow Frank De Graeve, Jan Seurinck and Joost",
+    "zender": "VTM",
+    "datum": "2023-10-05",
+    "tijd": "20:00",
+    "samenvatting": "Volg de avonturen van Frank, Jan en Joost op Twitter voor exclusieve updates en meer!",
+    "seizoen_start": true,
+    "id": "vtm-follow-frank-de-graeve,-jan-seurinck-and-joost-2023-10-05",
+    "scraped_at": "2026-02-18T10:48:01.856464"
+  },
+  {
+    "titel": "Open Taakbeheer",
+    "zender": "VRT",
+    "datum": "2023-10-04",
+    "tijd": "20:00",
+    "samenvatting": "Een spannende aflevering waarin actuele thema's worden besproken met een kritische blik.",
+    "seizoen_start": false,
+    "id": "vrt-open-taakbeheer-2023-10-04",
+    "scraped_at": "2026-02-18T10:47:59.144140"
+  },
+  {
+    "titel": "Brad Paisley's Tweet",
+    "zender": "VTM",
+    "datum": "2023-10-05",
+    "tijd": "20:30",
+    "samenvatting": "Ontdek de impact van Brad Paisley's tweet in de wereld van entertainment en nieuws.",
+    "seizoen_start": false,
+    "id": "vtm-brad-paisley's-tweet-2023-10-05",
+    "scraped_at": "2026-02-18T10:47:56.869076"
+  },
+  {
+    "titel": "Koppenmaken",
+    "zender": "VTM",
+    "datum": "2023-10-04",
+    "tijd": "20:30",
+    "samenvatting": "Ontdek de nieuwste trends en verhalen in de wereld van media en entertainment.",
+    "seizoen_start": true,
+    "id": "vtm-koppenmaken-2023-10-04",
+    "scraped_at": "2026-02-18T10:47:54.798346"
+  }
+]
