@@ -75,7 +75,7 @@ def analyze_with_ai(subject, sender, body, email_date, client):
     today = datetime.now().strftime("%Y-%m-%d")
     
     prompt = f"""
-    Je bent een strikte TV-redacteur assistent.
+    Je bent een TV-redacteur die persberichten verwerkt voor een database.
     
     CONTEXT:
     - Vandaag is: {today}
@@ -84,26 +84,24 @@ def analyze_with_ai(subject, sender, body, email_date, client):
     - Onderwerp: {subject}
     
     INHOUD EMAIL:
-    {body[:4000]}
+    {body[:5000]}  # Meer tekst toestaan voor analyse
     
     JOUW TAAK:
-    Beoordeel of dit een PERSBERICHT is over een SPECIFIEK TV-PROGRAMMA (Vlaamse TV: VTM, Play, VRT, Canvas).
+    Beoordeel of dit een PERSBERICHT is over een SPECIFIEK TV-PROGRAMMA (Vlaamse TV).
     
     ⚠️ NEGEER DEZE MAILS (Return {{ "ignore": true }}):
-    - Google Security Alerts / 2-Step Verification
-    - Twitter / X notificaties ("Tweeted", "Shared")
-    - LinkedIn notificaties
-    - Nieuwsbrieven zonder specifieke programma-info
-    - Spam of reclame
+    - Google Security Alerts, Twitter/LinkedIn notificaties, Spam.
     
-    ALS HET WEL RELEVANT IS, GEEF JSON:
+    ALS HET WEL RELEVANT IS, GEEF EEN UITGEBREID JSON OBJECT:
     {{
       "titel": "Exacte programmatitel (zonder 'Seizoen X')",
       "zender": "De zender (VTM, VRT 1, Play4, Canvas, etc.)",
-      "datum": "De uitzenddatum in YYYY-MM-DD formaat (kijk goed naar de tekst: 'morgen', 'volgende week', 'woensdag 17 feb')",
+      "datum": "De uitzenddatum in YYYY-MM-DD formaat",
       "tijd": "Uitzenduur (HH:MM) indien vermeld, anders null",
-      "samenvatting": "Korte, wervende samenvatting (max 2 zinnen).",
-      "seizoen_start": true/false (is het de start van een nieuw seizoen?)
+      "samenvatting": "Een korte 'logline' van max 2 zinnen (voor in de lijstweergave).",
+      "lange_inhoud": "De volledige inhoudelijke beschrijving. Gebruik de tekst uit de mail, maar strip marketing-praat ('Kijk zeker!', 'Nu bij ons'). Focus op het verhaal/de inhoud. Mag 3-4 alinea's zijn.",
+      "quote": "Een opvallend citaat uit de tekst (indien aanwezig), inclusief naam van de spreker. Bijv: 'Het was een hel', zegt regisseur Jan.",
+      "seizoen_start": true/false
     }}
     
     GEEF ALLEEN JSON.
@@ -126,7 +124,6 @@ def analyze_with_ai(subject, sender, body, email_date, client):
     except Exception as e:
         print(f"AI Error: {e}")
         return None
-
 def is_relevant(subject, sender):
     # 1. Check Afzender Domein (Zeer betrouwbaar)
     sender_lower = sender.lower()
