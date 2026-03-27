@@ -2,6 +2,16 @@
   {
     "titel": "Gemini API usage tier updates and billing caps starting Apr 2026",
     "zender": "Google AI Studio",
+    "datum": "2026-03-27",
+    "tijd": null,
+    "seizoen_start": false,
+    "volledige_tekst": "Hello Karsten,\n\nWe're writing to notify you of updates to Google AI Studio Usage Tiers and the introduction of enforced billing account tier caps for the Gemini API starting April 1, 2026.\n\nReview these changes and how they may impact your API usage.\n\nKey changes:\n\nStarting March 16, 2026:\n\nNew Project Spend Caps: You can now configure optional, project-level spend limits. If a project exceeds your defined target, the system will pause requests for that specific project within approximately 10 minutes. Please note that you are responsible for any overages incurred during this brief window.\n\nPaused projects will resume as soon as the limits reset on the first day of the following month, or you update/remove the cap.\n\nStarting April 1, 2026:\n\nEnforced billing account tier caps: Each Usage Tier will enforce a maximum monthly spend limit at the billing account level. If your aggregate spend reaches this cap, Gemini API requests tied to that billing account will be paused until the next month.\nAutomated Usage Tier upgrades: Tier upgrades will be automated. Your account will systematically graduate to higher tiers with higher rate limits as you meet specified spend and tenure thresholds.\n\nWhat you need to do\n\nManually verify and review your current usage to plan ahead and prevent service disruption when the new caps take effect:\n\nCheck your tier: Log in to Google AI Studio to view your current Usage Tier and applicable limits.\nReview your billing account spend: Evaluate your historical monthly spending to determine if the new Billing Account Tier Cap will impact your ongoing projects. More details here.\n\nIf you determine that your billing account requires a higher cap:\n\nRequest an override: If you require a cap higher than the automatically assigned tier, please fill out this form.\n\nIf you have any questions or need help, please check our product documentation or visit the Gemini AI community.\n\nThanks for choosing Google AI Studio and Gemini API.\n\n– The Gemini API Team",
+    "id": "google ai studio-geminiapiusagetierupdatesandbillingcapsstartingapr2026-2026-03-27",
+    "scraped_at": "2026-03-27T07:21:03.387677"
+  },
+  {
+    "titel": "Gemini API usage tier updates and billing caps starting Apr 2026",
+    "zender": "Google AI Studio",
     "datum": "2026-03-26",
     "tijd": null,
     "seizoen_start": false,
